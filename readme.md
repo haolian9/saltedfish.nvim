@@ -12,11 +12,12 @@ provides some simple lint rules for fish scripts
 * a comprehensive linter for fish, these lint rules are just took from my daily use
 
 ## status
-* far from usable
+* far from stable
+* yet usable
 
 ## prerequisites
 * nvim 0.9.*
-* infra.nvim
+* haolian9/infra.nvim
 
 ## usage
-* `:lua require'saltedfish`.lint()`
+* `:lua require'saltedfish'.lint()`
