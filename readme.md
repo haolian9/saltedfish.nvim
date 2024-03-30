@@ -22,3 +22,8 @@ provides some simple lint rules for fish scripts
 
 ## usage
 * `:lua require'saltedfish'.lint()`
+
+## thanks
+* https://github.com/aloussase/dockerlint.nvim
+    * thanks to it, i knew that nvim's treesitter api can be used for writing linter
+    * sadly, seems it's been deleted
