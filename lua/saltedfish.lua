@@ -124,7 +124,7 @@ do
   ---@param bufnr integer
   ---@param cmd_nodes TSNode[]
   ---@return TSNode[]
-  local function get_set_nodes(bufnr, cmd_nodes)
+  local function collect_set_nodes(bufnr, cmd_nodes)
     local sets = {}
     for _, cmd in ipairs(cmd_nodes) do
       local names = cmd:field("name")
@@ -169,7 +169,7 @@ do
   ---@return table[]
   function rule_set_var_with_dollar(bufnr, cmd_nodes)
     local digs = {}
-    for _, node in ipairs(get_set_nodes(bufnr, cmd_nodes)) do
+    for _, node in ipairs(collect_set_nodes(bufnr, cmd_nodes)) do
       local dig = lint(bufnr, node)
       if dig then table.insert(digs, dig) end
     end
