@@ -6,8 +6,6 @@ local listlib = require("infra.listlib")
 local prefer = require("infra.prefer")
 local strlib = require("infra.strlib")
 
-local nuts = require("squirrel.nuts")
-
 local ts = vim.treesitter
 local api = vim.api
 
@@ -15,11 +13,7 @@ local ns = api.nvim_create_namespace("saltedfish")
 
 ---@param node TSNode
 ---@return string
-local function get_node_text(bufnr, node)
-  local lines = nuts.get_node_lines(bufnr, node)
-  assert(#lines == 1)
-  return lines[1]
-end
+local function get_node_text(bufnr, node) return ts.get_node_text(node, bufnr) end
 
 ---@param bufnr integer
 ---@param node TSNode
