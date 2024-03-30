@@ -17,6 +17,7 @@ provides some simple lint rules for fish scripts
 
 ## prerequisites
 * nvim 0.9.*
+* https://github.com/ram02z/tree-sitter-fish
 * haolian9/infra.nvim
 
 ## usage
