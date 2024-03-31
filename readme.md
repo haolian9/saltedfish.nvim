@@ -1,6 +1,6 @@
 provides some simple lint rules for fish scripts
 
-## features
+## features, impl
 * based on vim.treesitter api
 * populate diagnostics to vim.diagnostic
 * try to spot these gotchas
@@ -12,8 +12,13 @@ provides some simple lint rules for fish scripts
 * a comprehensive linter for fish, these lint rules are just took from my daily use
 
 ## status
-* far from stable
-* yet usable
+* not usable
+
+## todo
+* using query!
+    * ref: vim.treesitter.query.lint()
+    * ref: https://siraben.dev/2022/03/22/tree-sitter-linter.html
+
 
 ## prerequisites
 * nvim 0.9.*
