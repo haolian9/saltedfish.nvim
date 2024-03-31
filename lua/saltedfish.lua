@@ -101,7 +101,7 @@ do
     local c0 = string.sub(text, 1, 1)
     if c0 == "$" or c0 == "'" or c0 == '"' then return end
 
-    return compose_dig(bufnr, arg_node, "test's string args should be quoted or $-prefixed")
+    return compose_dig(bufnr, arg_node, "string-arg of test should be quoted or $-prefixed")
   end
 
   ---@param bufnr integer
@@ -160,7 +160,7 @@ do
     local text = get_node_text(bufnr, arg0)
 
     local c0 = string.sub(text, 1, 1)
-    if c0 == "$" then return compose_dig(bufnr, arg0, "set's arg0 should not be $-prefixed") end
+    if c0 == "$" then return compose_dig(bufnr, arg0, "arg0 of set should not be $-prefixed") end
     if c0 == "'" or c0 == '"' then return compose_dig(bufnr, arg0, "set's arg0 should not be quoted") end
   end
 

@@ -6,6 +6,7 @@ test $str = $str2
 test str = str2
 test ! one -gt 0.1
 test one -gt 1
+test -f ~/a/b/c/d
 
 function foo
     :
