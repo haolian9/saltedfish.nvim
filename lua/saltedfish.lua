@@ -34,40 +34,32 @@ local function compose_dig(bufnr, node, msg)
   }
 end
 
----@param root TSNode
----@return TSNode[]
-local function collect_cmd_nodes(root)
-  local cmds = {}
-  local queue = { root }
-  while #queue > 0 do
-    ---@type TSNode
-    local node = listlib.pop(queue)
-    if node:type() == "command" then
-      table.insert(cmds, node)
-    else
-      for i = 0, node:named_child_count() do
-        table.insert(queue, node:named_child(i))
-      end
+local iter_nodes
+do
+  local patterns = [[
+    ((command name: (word) @a (#eq? @a "test")) @b (#set! "kind" "test"))
+    ((command name: (word) @a (#eq? @a "set")) @b (#set! "kind" "set"))
+  ]]
+
+  local query = ts.query.parse("fish", patterns)
+
+  ---@param bufnr integer
+  ---@param root TSNode
+  ---@return fun(): 'test'|'set'|nil, TSNode|nil
+  function iter_nodes(bufnr, root)
+    local iter = assert(query:iter_matches(root, bufnr, 0, -1))
+
+    return function()
+      local pattern_id, match, metadata = iter()
+      jelly.debug("pattern_id=%s, match=%s, metadata=%s", pattern_id, match, metadata)
+      if not (pattern_id and match and metadata) then return end
+      return metadata.kind, match[#match]
     end
   end
-  return cmds
 end
 
 local rule_test_var_may_be_undefined
 do
-  ---@param bufnr integer
-  ---@param cmd_nodes TSNode[]
-  ---@return TSNode[]
-  local function collect_test_nodes(bufnr, cmd_nodes)
-    local tests = {}
-    for _, cmd in ipairs(cmd_nodes) do
-      local names = cmd:field("name")
-      assert(#names == 1)
-      if get_node_text(bufnr, names[1]) == "test" then table.insert(tests, cmd) end
-    end
-    return tests
-  end
-
   ---@param bufnr integer
   ---@param set_node TSNode
   local function collect_args(bufnr, set_node)
@@ -105,15 +97,13 @@ do
   end
 
   ---@param bufnr integer
-  ---@param cmd_nodes TSNode[]
+  ---@param test_node TSNode
   ---@return table[]
-  function rule_test_var_may_be_undefined(bufnr, cmd_nodes)
+  function rule_test_var_may_be_undefined(bufnr, test_node)
     local digs = {}
-    for _, test in ipairs(collect_test_nodes(bufnr, cmd_nodes)) do
-      for _, arg in ipairs(collect_args(bufnr, test)) do
-        local dig = lint_arg(bufnr, arg)
-        if dig then table.insert(digs, dig) end
-      end
+    for _, arg in ipairs(collect_args(bufnr, test_node)) do
+      local dig = lint_arg(bufnr, arg)
+      if dig then table.insert(digs, dig) end
     end
     return digs
   end
@@ -121,19 +111,6 @@ end
 
 local rule_set_var_with_dollar
 do
-  ---@param bufnr integer
-  ---@param cmd_nodes TSNode[]
-  ---@return TSNode[]
-  local function collect_set_nodes(bufnr, cmd_nodes)
-    local sets = {}
-    for _, cmd in ipairs(cmd_nodes) do
-      local names = cmd:field("name")
-      assert(#names == 1)
-      if get_node_text(bufnr, names[1]) == "set" then table.insert(sets, cmd) end
-    end
-    return sets
-  end
-
   ---@param bufnr integer
   ---@param set_node TSNode
   ---@return TSNode?
@@ -165,16 +142,9 @@ do
   end
 
   ---@param bufnr integer
-  ---@param cmd_nodes TSNode[]
+  ---@param set_node TSNode
   ---@return table[]
-  function rule_set_var_with_dollar(bufnr, cmd_nodes)
-    local digs = {}
-    for _, node in ipairs(collect_set_nodes(bufnr, cmd_nodes)) do
-      local dig = lint(bufnr, node)
-      if dig then table.insert(digs, dig) end
-    end
-    return digs
-  end
+  function rule_set_var_with_dollar(bufnr, set_node) return { lint(bufnr, set_node) } end
 end
 
 function M.lint(bufnr)
@@ -182,16 +152,26 @@ function M.lint(bufnr)
 
   if prefer.bo(bufnr, "filetype") ~= "fish" then return jelly.warn("not a fish script") end
 
-  local cmd_nodes
+  local root
   do
-    local trees = ts.get_parser(bufnr, "fish"):trees()
-    local root = assert(trees[1]):root()
-    cmd_nodes = collect_cmd_nodes(root)
+    local parser = ts.get_parser(bufnr, "fish")
+    local trees = parser:trees()
+    assert(#trees == 1)
+    local tree = trees[1]
+    root = tree:root()
   end
 
   local digs = {}
-  listlib.extend(digs, rule_test_var_may_be_undefined(bufnr, cmd_nodes))
-  listlib.extend(digs, rule_set_var_with_dollar(bufnr, cmd_nodes))
+
+  for kind, node in iter_nodes(bufnr, root) do
+    if kind == "test" then
+      listlib.extend(digs, rule_test_var_may_be_undefined(bufnr, node))
+    elseif kind == "set" then
+      listlib.extend(digs, rule_set_var_with_dollar(bufnr, node))
+    else
+      error("unreachable")
+    end
+  end
 
   jelly.debug("digs: %d", #digs)
   vim.diagnostic.set(ns, bufnr, digs)
